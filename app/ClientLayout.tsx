@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { auth } from "@/lib/firebase";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 
 export default function ClientLayout({
   children,
@@ -13,30 +13,50 @@ export default function ClientLayout({
 }) {
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const router = useRouter();
 
+  const router = useRouter();
+  const pathname = usePathname();
+
+  // 🔐 Auth listener
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (u) => {
-      if (!u) {
-        router.push("/login");
-      } else {
-        setUser(u);
-      }
-
-      setLoading(false); // ✅ IMPORTANT
+      setUser(u || null);
+      setLoading(false);
     });
 
     return () => unsubscribe();
   }, []);
 
+  // 🚀 Handle redirects SAFELY
+  useEffect(() => {
+    if (!loading) {
+      // Not logged in → go to login
+      if (!user && pathname !== "/login") {
+        router.push("/login");
+      }
+
+      // Logged in → block login page
+      if (user && pathname === "/login") {
+        router.push("/");
+      }
+    }
+  }, [user, loading, pathname]);
+
+  // ⏳ Loading state
   if (loading) {
     return (
       <div className="flex h-screen items-center justify-center">
-        <p>Loading...</p>
+        <p>Checking authentication...</p>
       </div>
     );
   }
 
+  // 🚫 Not logged in → only show login page
+  if (!user) {
+    return <>{children}</>;
+  }
+
+  // ✅ Logged in UI
   return (
     <div className="flex h-screen overflow-hidden">
 
