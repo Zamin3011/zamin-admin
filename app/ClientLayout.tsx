@@ -12,6 +12,7 @@ export default function ClientLayout({
   children: React.ReactNode;
 }) {
   const [user, setUser] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
   const router = useRouter();
 
   useEffect(() => {
@@ -21,12 +22,20 @@ export default function ClientLayout({
       } else {
         setUser(u);
       }
+
+      setLoading(false); // ✅ IMPORTANT
     });
 
     return () => unsubscribe();
   }, []);
 
-  if (!user) return null;
+  if (loading) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <p>Loading...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-screen overflow-hidden">
